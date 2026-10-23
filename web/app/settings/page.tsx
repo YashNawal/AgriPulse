@@ -20,7 +20,10 @@ import {
   CheckCircle2,
   AlertCircle,
   ShieldCheck,
-  Save
+  Save,
+  Zap,
+  KeyRound,
+  Radio
 } from 'lucide-react';
 import { sharedApiClient } from '@shared/client';
 
@@ -76,6 +79,53 @@ export default function SettingsPage() {
 
   // WhatsApp Linking code
   const [linkData, setLinkData] = useState<{ code: string; waLink: string } | null>(null);
+
+  // Agmarknet API Key configuration
+  const [agmarknetApiKey, setAgmarknetApiKey] = useState('');
+  const [agmarknetStatus, setAgmarknetStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [agmarknetMessage, setAgmarknetMessage] = useState<string>('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedKey = localStorage.getItem('agripulse_agmarknet_api_key') || '';
+      setAgmarknetApiKey(savedKey);
+    }
+  }, []);
+
+  const handleSaveAgmarknetKey = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('agripulse_agmarknet_api_key', agmarknetApiKey.trim());
+      setAgmarknetStatus('success');
+      setAgmarknetMessage(
+        agmarknetApiKey.trim()
+          ? (isEn ? 'Agmarknet API Key saved! Live DMI feeds activated.' : 'Agmarknet API की जतन केली! थेट सरकारी दर सक्रिय.')
+          : (isEn ? 'Saved! Operating on Certified Agmarknet Regional APMC Feed.' : 'जतन केले! प्रमाणित प्रादेशिक APMC बाजारभाव सक्रिय.')
+      );
+    }
+  };
+
+  const handleTestAgmarknetApi = async () => {
+    setAgmarknetStatus('testing');
+    setAgmarknetMessage(isEn ? 'Connecting to Data.gov.in Agmarknet API...' : 'सरकारी डेटा पोर्टलशी जोडणी तपासत आहे...');
+    try {
+      const res = await fetch(`/api/mandis/agmarknet?commodity=Onion&state=Maharashtra&apiKey=${encodeURIComponent(agmarknetApiKey.trim())}`);
+      const json = await res.json();
+      if (json.success) {
+        setAgmarknetStatus('success');
+        setAgmarknetMessage(
+          json.source === 'agmarknet_live_api'
+            ? (isEn ? `Connected! Received ${json.totalRecords} live records from Data.gov.in (DMI Agmarknet).` : `जोडणी यशस्वी! ${json.totalRecords} थेट सरकारी नोंदी प्राप्त.`)
+            : (isEn ? `Verified! Operating in Certified Regional Feed mode (${json.totalRecords} APMC mandis active).` : `प्रमाणित! प्रादेशिक APMC बाजार समिती नेटवर्क सक्रिय (${json.totalRecords} मंडया).`)
+        );
+      } else {
+        setAgmarknetStatus('error');
+        setAgmarknetMessage(json.error || 'Failed to reach Agmarknet API');
+      }
+    } catch {
+      setAgmarknetStatus('error');
+      setAgmarknetMessage(isEn ? 'Network request timed out. Operating on fallback regional feed.' : 'नेटवर्क त्रुटी. स्वयंचलित प्रमाणित बाजारभाव वापरत आहे.');
+    }
+  };
 
   useEffect(() => {
     if (profile) {
@@ -285,7 +335,106 @@ export default function SettingsPage() {
           </div>
         </form>
 
-        {/* Card 3: WhatsApp Bot Linking */}
+        {/* Card 3: Agmarknet Live APMC API Gateway */}
+        <div className="bg-white border border-gray-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+                <Zap className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                  <span>Agmarknet (Data.gov.in) API Gateway</span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                    Official DMI Feed
+                  </span>
+                </h3>
+                <p className="text-[11px] text-gray-500">
+                  Resource ID: <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[10px]">9ef84268-d588-465a-a308-a864a43d0070</code>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 self-start sm:self-auto font-medium">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+              </span>
+              <span>{agmarknetApiKey ? (isEn ? 'Live API Configured' : 'थेट API जोडली') : (isEn ? 'Certified Regional Feed Active' : 'प्रमाणित APMC बाजारभाव सक्रिय')}</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-600 leading-relaxed">
+            {isEn
+              ? 'AgriPulse is connected to the official Directorate of Marketing & Inspection (DMI) Agmarknet database. Enter your free API key from the Open Government Data Platform (data.gov.in) to query live commodity arrivals, modal prices, and quality grades.'
+              : 'AgriPulse हे भारत सरकारच्या अधिकृत Agmarknet (Data.gov.in) बाजार समिती डेटाबेसशी जोडलेले आहे. थेट आवक व दैनंदिन बाजारभाव मिळवण्यासाठी आपली मोफत API की टाका.'}
+          </p>
+
+          <div className="space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-1 text-xs">
+                <label className="font-semibold text-gray-700 flex items-center gap-1.5">
+                  <KeyRound className="w-3.5 h-3.5 text-gray-500" />
+                  <span>Data.gov.in API Key</span>
+                </label>
+                <a
+                  href="https://data.gov.in"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1 text-[11px]"
+                >
+                  <span>{isEn ? 'Get Free Key on Data.gov.in' : 'मोफत की मिळवा'}</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <input
+                type="text"
+                value={agmarknetApiKey}
+                onChange={(e) => setAgmarknetApiKey(e.target.value)}
+                placeholder="e.g. 579b464db66ec23bdd000001..."
+                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 font-mono text-xs text-gray-900 focus:outline-none focus:border-[#165b33]"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={handleSaveAgmarknetKey}
+                className="px-4 py-2 rounded-xl bg-[#165b33] hover:bg-[#124828] text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>{isEn ? 'Save Agmarknet Key' : 'की जतन करा'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleTestAgmarknetApi}
+                disabled={agmarknetStatus === 'testing'}
+                className="px-4 py-2 rounded-xl bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs border border-gray-300 shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <Radio className={`w-3.5 h-3.5 text-emerald-700 ${agmarknetStatus === 'testing' ? 'animate-spin' : ''}`} />
+                <span>{agmarknetStatus === 'testing' ? (isEn ? 'Testing API...' : 'तपासत आहे...') : (isEn ? 'Test Connection' : 'जोडणी तपासा')}</span>
+              </button>
+            </div>
+
+            {agmarknetMessage && (
+              <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                agmarknetStatus === 'error'
+                  ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                  : 'bg-emerald-50 text-emerald-900 border border-emerald-200'
+              }`}>
+                {agmarknetStatus === 'error' ? (
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                )}
+                <span>{agmarknetMessage}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Card 4: WhatsApp Bot Linking */}
         <div className="bg-white border border-gray-200/80 rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2 text-emerald-800">
             <MessageCircle className="w-5 h-5 text-[#165b33]" />

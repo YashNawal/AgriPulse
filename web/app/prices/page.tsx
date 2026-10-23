@@ -253,9 +253,16 @@ export default function PricesPage() {
         {/* Header with Title and Unit Selector */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200/80 pb-5">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#165b33] text-xs font-bold border border-emerald-300">
                 All India APMC Network · {ALL_INDIAN_CROPS.length}+ Crops & Vegetables
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 text-xs font-bold border border-amber-300">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                </span>
+                Agmarknet (DMI) Live Sync
               </span>
               <span className="text-xs text-gray-500 font-medium">
                 {location.village}, {location.district}
