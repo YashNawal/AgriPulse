@@ -8,7 +8,9 @@ import {
   SellOrWaitDecision,
   SoilProfile,
   CropSuitability,
-  HandoffTicket
+  HandoffTicket,
+  ProductRequest,
+  AdminStats
 } from './types';
 
 export const MOCK_COMMODITIES: CommodityMaster[] = [
@@ -504,3 +506,79 @@ export const MOCK_HANDOFF_TICKETS: HandoffTicket[] = [
     answeredAt: '2026-10-22T17:05:00+05:30'
   }
 ];
+
+export const MOCK_PRODUCT_REQUESTS: ProductRequest[] = [
+  {
+    id: 9101,
+    productId: 103,
+    productName: 'Mahyco Gold Hybrid Wheat Seed HD-2967',
+    crop: 'Wheat (गेहूं)',
+    quantity: 2,
+    farmerName: 'Dnyaneshwar More (ज्ञानेश्वर मोरे)',
+    farmerPhone: '+91 98220 33412',
+    village: 'Lasalgaon',
+    district: 'Nashik',
+    status: 'pending',
+    notes: 'Urgent requirement before weekend sowing',
+    createdAt: '2026-10-24T10:30:00+05:30'
+  },
+  {
+    id: 9102,
+    productId: 101,
+    productName: 'IFFCO Nano Urea Liquid',
+    crop: 'All Crops',
+    quantity: 4,
+    farmerName: 'Suresh Patil (सुरेश पाटील)',
+    farmerPhone: '+91 94215 67890',
+    village: 'Pimpalgaon Baswant',
+    district: 'Nashik',
+    status: 'confirmed',
+    notes: 'Pickup from local depot',
+    createdAt: '2026-10-23T14:15:00+05:30'
+  },
+  {
+    id: 9103,
+    productId: 105,
+    productName: 'Coromandel Gromor 10:26:26 Complex',
+    crop: 'Soybean',
+    quantity: 5,
+    farmerName: 'Kailash Yadav (कैलाश यादव)',
+    farmerPhone: '+91 97531 24680',
+    village: 'Sanwer',
+    district: 'Indore',
+    status: 'dispatched',
+    notes: 'Payment via UPI upon truck arrival',
+    createdAt: '2026-10-22T11:00:00+05:30'
+  },
+  {
+    id: 9104,
+    productId: 104,
+    productName: 'Kaveri Cotton Seed Jaadu BG-II',
+    crop: 'Cotton (कपास)',
+    quantity: 6,
+    farmerName: 'Anil Deshmukh (अनिल देशमुख)',
+    farmerPhone: '+91 98901 11223',
+    village: 'Katol',
+    district: 'Nagpur',
+    status: 'completed',
+    notes: 'Delivered at farm gate',
+    createdAt: '2026-10-20T09:40:00+05:30'
+  }
+];
+
+export const MOCK_ADMIN_STATS: AdminStats = {
+  messagesToday: 184,
+  newProductRequests: 4,
+  openExpertQuestions: 3,
+  totalProducts: 7,
+  notFoundRatePct: 4.2,
+  languageBreakdown: {
+    'mr': 76,
+    'hi': 62,
+    'en': 24,
+    'gu': 12,
+    'te': 6,
+    'kn': 4
+  }
+};
+

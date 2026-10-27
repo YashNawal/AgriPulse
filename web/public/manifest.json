@@ -1,0 +1,23 @@
+{
+  "name": "KisanMitra - Agri Intelligence & Mandi Prices",
+  "short_name": "KisanMitra",
+  "description": "Smart Agriculture, Live APMC Mandi Rates, Soil Crop Matching, Seeds & Fertilizer Store, and Multilingual Advisory",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f6f4",
+  "theme_color": "#165b33",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/file.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/file.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["agriculture", "business", "productivity"]
+}

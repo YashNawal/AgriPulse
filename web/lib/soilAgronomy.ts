@@ -417,5 +417,30 @@ export function evaluateCropSuitability(
     }
   });
 
+  // Dynamic Soil-Health-Card Adjustment across all recommended crops (KisanMitra Spec Page 1 & 3)
+  for (const rec of recommendations) {
+    const notes: string[] = [];
+    if (soil.nitrogenKgHa < 250) {
+      notes.push(`Low Nitrogen (${soil.nitrogenKgHa} kg/ha): Boost basal DAP / foliar Nano Urea by +25%`);
+    }
+    if (soil.phosphorusKgHa < 12) {
+      notes.push(`Low Phosphorus (${soil.phosphorusKgHa} kg/ha): Add more DAP or Mahadhan 12:61:00 (+30%) for root establishment`);
+    } else if (soil.phosphorusKgHa > 25) {
+      notes.push(`High Phosphorus (${soil.phosphorusKgHa} kg/ha): Reduce basal phosphate input by 20%`);
+    }
+    if (soil.potassiumKgHa < 150) {
+      notes.push(`Low Potassium (${soil.potassiumKgHa} kg/ha): Apply 25 kg MOP / 00:00:50 for disease resilience`);
+    }
+    if (soil.ph > 8.0) {
+      notes.push(`Alkaline Soil (pH ${soil.ph}): Add 15 kg Sulphur 90% Bentonite to release locked phosphorus`);
+    } else if (soil.ph < 6.2) {
+      notes.push(`Acidic Soil (pH ${soil.ph}): Apply agricultural lime (200 kg/acre)`);
+    }
+    if (soil.organicCarbonPct < 0.5) {
+      notes.push(`Low Organic Carbon (${soil.organicCarbonPct}%): Incorporate 3 MT compost`);
+    }
+    rec.fertilizerPlan.soilAdjustmentNote = notes.length > 0 ? notes.join(' • ') : 'Balanced soil fertility. Follow standard package of practices.';
+  }
+
   return recommendations.sort((a, b) => b.suitabilityScorePct - a.suitabilityScorePct);
 }

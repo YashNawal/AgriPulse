@@ -182,3 +182,13 @@ export interface HandoffTicket {
   createdAt: string;
   answeredAt?: string;
 }
+
+export interface AdminStats {
+  messagesToday: number;
+  newProductRequests: number;
+  openExpertQuestions: number;
+  totalProducts: number;
+  notFoundRatePct: number;
+  languageBreakdown: Record<string, number>;
+}
+

@@ -11,7 +11,8 @@ import {
   ProductRequest,
   ChatMessage,
   HandoffTicket,
-  SupportedLanguage
+  SupportedLanguage,
+  AdminStats
 } from './types';
 
 import {
@@ -24,7 +25,9 @@ import {
   MOCK_SELL_OR_WAIT,
   MOCK_SOIL,
   MOCK_RECOMMENDED_CROPS,
-  MOCK_HANDOFF_TICKETS
+  MOCK_HANDOFF_TICKETS,
+  MOCK_PRODUCT_REQUESTS,
+  MOCK_ADMIN_STATS
 } from './mockData';
 
 export class KisanMitraApiClient {
@@ -121,8 +124,51 @@ export class KisanMitraApiClient {
     return plans;
   }
 
+  async addProduct(product: Omit<Product, 'id'>): Promise<Product> {
+    const newProduct: Product = {
+      ...product,
+      id: Math.floor(Math.random() * 9000) + 1000
+    };
+    MOCK_PRODUCTS.unshift(newProduct);
+    return newProduct;
+  }
+
+  async updateProduct(id: number, updates: Partial<Product>): Promise<Product | null> {
+    const idx = MOCK_PRODUCTS.findIndex(p => p.id === id);
+    if (idx !== -1) {
+      MOCK_PRODUCTS[idx] = { ...MOCK_PRODUCTS[idx], ...updates };
+      return MOCK_PRODUCTS[idx];
+    }
+    return null;
+  }
+
+  async deleteProduct(id: number): Promise<boolean> {
+    const idx = MOCK_PRODUCTS.findIndex(p => p.id === id);
+    if (idx !== -1) {
+      MOCK_PRODUCTS.splice(idx, 1);
+      return true;
+    }
+    return false;
+  }
+
+  async addFertilizerPlan(plan: Omit<FertilizerPlan, 'id'>): Promise<FertilizerPlan> {
+    const newPlan: FertilizerPlan = {
+      ...plan,
+      id: Math.floor(Math.random() * 9000) + 2000
+    };
+    MOCK_FERTILIZER_PLANS.unshift(newPlan);
+    return newPlan;
+  }
+
   async submitProductRequest(request: Omit<ProductRequest, 'id' | 'createdAt' | 'status'>): Promise<{ success: boolean; requestId: number; message: string }> {
     const newId = Math.floor(Math.random() * 90000) + 10000;
+    const newRequest: ProductRequest = {
+      ...request,
+      id: newId,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+    MOCK_PRODUCT_REQUESTS.unshift(newRequest);
     return {
       success: true,
       requestId: newId,
@@ -130,7 +176,20 @@ export class KisanMitraApiClient {
     };
   }
 
-  // 6. Admin Panel Handoff Tickets
+  async getProductRequests(): Promise<ProductRequest[]> {
+    return MOCK_PRODUCT_REQUESTS;
+  }
+
+  async updateProductRequestStatus(id: number, status: ProductRequest['status']): Promise<boolean> {
+    const req = MOCK_PRODUCT_REQUESTS.find(r => r.id === id);
+    if (req) {
+      req.status = status;
+      return true;
+    }
+    return false;
+  }
+
+  // 6. Admin Panel Handoff Tickets & Statistics
   async getHandoffTickets(): Promise<HandoffTicket[]> {
     return MOCK_HANDOFF_TICKETS;
   }
@@ -146,12 +205,34 @@ export class KisanMitraApiClient {
     return false;
   }
 
+  async getAdminStats(): Promise<AdminStats> {
+    return {
+      ...MOCK_ADMIN_STATS,
+      newProductRequests: MOCK_PRODUCT_REQUESTS.filter(r => r.status === 'pending').length,
+      openExpertQuestions: MOCK_HANDOFF_TICKETS.filter(t => t.status === 'open').length,
+      totalProducts: MOCK_PRODUCTS.length
+    };
+  }
+
   // 7. Multilingual AI Assistant Chat Engine
   async sendChatMessage(
     text: string,
     lang: SupportedLanguage = 'hi',
     channel: 'web' | 'whatsapp' | 'telegram' | 'app' = 'web'
   ): Promise<ChatMessage> {
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, language: lang, channel })
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (_) {}
+    }
+
     const lower = text.toLowerCase();
 
     // Agronomic anti-hallucination grounded responses

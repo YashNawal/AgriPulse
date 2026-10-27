@@ -22,10 +22,13 @@ export function Navbar() {
     { name: t.nav.prices, href: '/prices' },
     { name: t.nav.forecast, href: '/forecast' },
     { name: t.nav.markets, href: '/markets' },
+    { name: locale === 'mr' ? 'नफा व MSP' : locale === 'hi' ? 'मुनाफा व MSP' : 'Profit & MSP', href: '/profit' },
     { name: t.nav.soil, href: '/soil' },
     { name: t.nav.store, href: '/store' },
     { name: t.nav.chat, href: '/chat' },
     { name: t.nav.alerts, href: '/alerts' },
+    { name: locale === 'mr' ? 'रोग निदान' : locale === 'hi' ? 'रोग पहचान' : 'Disease', href: '/disease' },
+    { name: t.nav.admin, href: '/admin' },
   ];
 
   return (
