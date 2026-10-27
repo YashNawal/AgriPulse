@@ -29,7 +29,7 @@ import { sharedApiClient } from '@shared/client';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, profile, refreshProfile, signOut } = useAuth();
+  const { user, profile, refreshProfile, signOut, isDemo, updateDemoProfile } = useAuth();
   const { languages, setLocale, locale, t } = useLanguage();
 
   const isEn = locale === 'en';
@@ -150,20 +150,32 @@ export default function SettingsPage() {
 
     try {
       if (user) {
-        const { error } = await supabase.from('profiles').upsert({
-          id: user.id,
-          full_name: fullName,
-          phone: phone || null,
-          language: selectedLang,
-          state: stateName,
-          district: districtName,
-          village: villageName,
-          land_size_acres: landSize,
-          updated_at: new Date().toISOString(),
-        });
+        if (isDemo) {
+          updateDemoProfile({
+            full_name: fullName,
+            phone: phone || undefined,
+            language: selectedLang,
+            state: stateName,
+            district: districtName,
+            village: villageName,
+            land_size_acres: landSize,
+          });
+        } else {
+          const { error } = await supabase.from('profiles').upsert({
+            id: user.id,
+            full_name: fullName,
+            phone: phone || null,
+            language: selectedLang,
+            state: stateName,
+            district: districtName,
+            village: villageName,
+            land_size_acres: landSize,
+            updated_at: new Date().toISOString(),
+          });
 
-        if (error) throw error;
-        await refreshProfile();
+          if (error) throw error;
+          await refreshProfile();
+        }
       }
 
       setLocale(selectedLang);

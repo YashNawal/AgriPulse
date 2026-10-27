@@ -110,13 +110,15 @@ cd AgriPulse
 cd web
 npm install
 
-# Configure environment variables
+# Configure environment variables (Optional - pre-configured with live public demo credentials)
 cp .env.example .env.local
 
 # Run the local development server
 npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+> **Note:** AgriPulse works out of the box! You can log in using your Supabase account, or click **"⚡ 1-Click Guest / Demo Login"** on the login page to immediately test all features without needing to configure external services.
+
 
 ### 3. Backend Setup (FastAPI - Optional)
 ```bash

@@ -21,7 +21,7 @@ import { MOCK_COMMODITIES } from '@shared/index';
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, isDemo, updateDemoProfile } = useAuth();
   const { languages, setLocale, locale } = useLanguage();
 
   const isEn = locale === 'en';
@@ -110,22 +110,36 @@ export default function OnboardingPage() {
     setSubmitting(true);
     try {
       if (user) {
-        // 1. Update Profile in Supabase
-        await supabase.from('profiles').upsert({
-          id: user.id,
-          full_name: profile?.full_name || user.user_metadata?.full_name || (isEn ? 'Farmer' : 'किसान भाई'),
-          phone: profile?.phone || user.user_metadata?.phone || null,
-          language: selectedLang,
-          state: stateName,
-          district: districtName,
-          village: villageName,
-          land_size_acres: landSize,
-          latitude: coordinates.lat || 20.1485,
-          longitude: coordinates.lon || 74.2255,
-          updated_at: new Date().toISOString(),
-        });
+        if (isDemo) {
+          updateDemoProfile({
+            full_name: profile?.full_name || user.user_metadata?.full_name || (isEn ? 'Farmer' : 'किसान भाई'),
+            phone: profile?.phone || user.user_metadata?.phone || undefined,
+            language: selectedLang,
+            state: stateName,
+            district: districtName,
+            village: villageName,
+            land_size_acres: landSize,
+            latitude: coordinates.lat || 20.1485,
+            longitude: coordinates.lon || 74.2255,
+          });
+        } else {
+          // 1. Update Profile in Supabase
+          await supabase.from('profiles').upsert({
+            id: user.id,
+            full_name: profile?.full_name || user.user_metadata?.full_name || (isEn ? 'Farmer' : 'किसान भाई'),
+            phone: profile?.phone || user.user_metadata?.phone || null,
+            language: selectedLang,
+            state: stateName,
+            district: districtName,
+            village: villageName,
+            land_size_acres: landSize,
+            latitude: coordinates.lat || 20.1485,
+            longitude: coordinates.lon || 74.2255,
+            updated_at: new Date().toISOString(),
+          });
 
-        await refreshProfile();
+          await refreshProfile();
+        }
       }
 
       setLocale(selectedLang);

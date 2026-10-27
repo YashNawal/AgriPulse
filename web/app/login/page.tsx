@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthContext';
 import { useLanguage } from '@/components/LanguageContext';
 import {
@@ -15,12 +15,13 @@ import {
   ArrowRight,
   ShieldCheck,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles
 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, profile } = useAuth();
+  const { user, profile, loginAsDemo } = useAuth();
   const { t, locale } = useLanguage();
 
   const isEn = locale === 'en';
@@ -52,6 +53,12 @@ export default function LoginPage() {
     signInBtn: isEn ? 'Sign In to Dashboard' : isMr ? 'डॅशबोर्डवर जा' : 'लॉगिन करें',
     signUpBtn: isEn ? 'Create Account & Continue' : isMr ? 'खाते तयार करा' : 'खाता बनाएं',
     googleBtn: isEn ? '1-Click Sign in with Google' : isMr ? 'Google द्वारे १-क्लिक लॉगिन' : 'Google द्वारा 1-क्लिक में लॉगिन',
+    demoBtn: isEn ? '⚡ 1-Click Guest / Demo Login' : isMr ? '⚡ झटपट शेतकरी डेमो लॉगिन' : '⚡ 1-क्लिक किसान डेमो लॉगिन',
+    demoSub: isEn
+      ? 'Instant access to all features (no setup or internet required)'
+      : isMr
+      ? 'कोणत्याही पासवर्ड किंवा इंटरनेट सेटअपशिवाय थेट डॅशबोर्ड सुरू करा'
+      : 'बिना किसी परेशानी तुरंत सीधे डॅशबोर्ड का उपयोग करें',
     orDivider: isEn ? 'Or continue with email' : isMr ? 'किंवा ईमेलने सुरू ठेवा' : 'अथवा ईमेल से आगे बढ़ें',
     successSignIn: isEn ? 'Login successful! Redirecting...' : isMr ? 'लॉगिन यशस्वी! सुरू करत आहोत...' : 'लॉगिन सफल! मुख्य पृष्ठ पर जा रहे हैं...',
     successSignUp: isEn ? 'Account created successfully! Proceeding to setup...' : isMr ? 'खाते तयार झाले! ऑनबोर्डिंग सुरू करत आहोत...' : 'खाता बन गया! ऑनबोर्डिंग की ओर जा रहे हैं...',
@@ -65,6 +72,7 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isNetworkError, setIsNetworkError] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // If already logged in, redirect
@@ -78,9 +86,22 @@ export default function LoginPage() {
     }
   }, [user, profile, router]);
 
+  const handleDemoLogin = () => {
+    loginAsDemo();
+    setSuccessMessage(
+      isEn
+        ? 'Welcome! Signed in as Demo Farmer (Ramesh Patil). Redirecting...'
+        : isMr
+        ? 'स्वागत आहे! शेतकरी रमेश पाटील म्हणून लॉगिन यशस्वी. सुरू करत आहोत...'
+        : 'स्वागत है! किसान रमेश पाटिल के रूप में लॉगिन सफल। आगे बढ़ रहे हैं...'
+    );
+    setTimeout(() => router.push('/'), 600);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setIsNetworkError(false);
     setSuccessMessage(null);
     setLoading(true);
 
@@ -101,12 +122,16 @@ export default function LoginPage() {
 
         // Create initial row in profiles table
         if (data.user) {
-          await supabase.from('profiles').upsert({
-            id: data.user.id,
-            full_name: fullName || (isEn ? 'Farmer' : 'किसान भाई'),
-            phone: phone || null,
-            language: locale,
-          });
+          try {
+            await supabase.from('profiles').upsert({
+              id: data.user.id,
+              full_name: fullName || (isEn ? 'Farmer' : 'किसान भाई'),
+              phone: phone || null,
+              language: locale,
+            });
+          } catch (profileErr) {
+            console.warn('Initial profile create non-fatal:', profileErr);
+          }
         }
 
         setSuccessMessage(strings.successSignUp);
@@ -122,7 +147,27 @@ export default function LoginPage() {
         setTimeout(() => router.push('/'), 1200);
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Authentication error. Please try again.');
+      console.error('Login/SignUp error:', err);
+      const rawMsg = err.message || '';
+      const isFetchErr = 
+        rawMsg.toLowerCase().includes('failed to fetch') ||
+        rawMsg.toLowerCase().includes('fetch') ||
+        rawMsg.toLowerCase().includes('network') ||
+        rawMsg.toLowerCase().includes('connection');
+
+      if (isFetchErr) {
+        setIsNetworkError(true);
+        setErrorMessage(
+          isEn
+            ? 'Unable to connect to Supabase authentication server ("Failed to fetch"). Please check your internet connection, or click below to enter directly using 1-Click Demo Login!'
+            : isMr
+            ? 'Supabase सर्व्हरशी संपर्क होऊ शकला नाही ("Failed to fetch"). कृपया इंटरनेट कनेक्शन तपासा, किंवा खालील "झटपट शेतकरी डेमो लॉगिन" वर क्लिक करून थेट सुरू करा!'
+            : 'Supabase सर्वर से कनेक्ट नहीं हो सका ("Failed to fetch")। कृपया इंटरनेट जांचें या नीचे "तुरंत किसान डेमो लॉगिन" से सीधे प्रवेश करें!'
+        );
+      } else {
+        setIsNetworkError(false);
+        setErrorMessage(rawMsg || 'Authentication error. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -131,6 +176,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     try {
       setErrorMessage(null);
+      setIsNetworkError(false);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -145,7 +191,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[85vh] bg-[#f4f6f4] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6 bg-white border border-gray-200/80 p-8 rounded-2xl shadow-xs">
+      <div className="max-w-md w-full space-y-5 bg-white border border-gray-200/80 p-8 rounded-2xl shadow-xs">
         
         {/* Brand Header */}
         <div className="text-center space-y-2">
@@ -160,11 +206,26 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* 1-Click Demo / Guest Farmer Login Highlight */}
+        <div className="p-3.5 bg-gradient-to-r from-amber-50 to-emerald-50 border border-amber-200/80 rounded-xl space-y-1.5">
+          <button
+            type="button"
+            onClick={handleDemoLogin}
+            className="w-full py-2.5 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+            <span>{strings.demoBtn}</span>
+          </button>
+          <p className="text-[10px] text-gray-600 text-center leading-tight">
+            {strings.demoSub}
+          </p>
+        </div>
+
         {/* Mode Toggle Tabs */}
         <div className="grid grid-cols-2 gap-1.5 bg-gray-100 p-1 rounded-xl border border-gray-200 text-xs font-bold">
           <button
             type="button"
-            onClick={() => { setMode('signin'); setErrorMessage(null); }}
+            onClick={() => { setMode('signin'); setErrorMessage(null); setIsNetworkError(false); }}
             className={`py-2 rounded-lg transition-all ${
               mode === 'signin' ? 'bg-[#165b33] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'
             }`}
@@ -173,7 +234,7 @@ export default function LoginPage() {
           </button>
           <button
             type="button"
-            onClick={() => { setMode('signup'); setErrorMessage(null); }}
+            onClick={() => { setMode('signup'); setErrorMessage(null); setIsNetworkError(false); }}
             className={`py-2 rounded-lg transition-all ${
               mode === 'signup' ? 'bg-[#165b33] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'
             }`}
@@ -184,9 +245,21 @@ export default function LoginPage() {
 
         {/* Notifications */}
         {errorMessage && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-            <span>{errorMessage}</span>
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{errorMessage}</span>
+            </div>
+            {isNetworkError && (
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs mt-2"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>{strings.demoBtn}</span>
+              </button>
+            )}
           </div>
         )}
 
@@ -196,6 +269,7 @@ export default function LoginPage() {
             <span>{successMessage}</span>
           </div>
         )}
+
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
